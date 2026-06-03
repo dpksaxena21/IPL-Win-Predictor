@@ -1,49 +1,50 @@
 'use client';
-
 import { motion } from 'framer-motion';
 
-const TEAMS: Record<string, { bg: string; accent: string; short: string; gradient: string }> = {
-  'Mumbai Indians':              { bg: '#004BA0', accent: '#00BFFF', short: 'MI',   gradient: 'linear-gradient(135deg, #004BA0, #0066CC)' },
-  'Chennai Super Kings':         { bg: '#FDB913', accent: '#FF6B00', short: 'CSK',  gradient: 'linear-gradient(135deg, #FDB913, #FF8C00)' },
-  'Royal Challengers Bengaluru': { bg: '#C8102E', accent: '#FFD700', short: 'RCB',  gradient: 'linear-gradient(135deg, #C8102E, #8B0000)' },
-  'Kolkata Knight Riders':       { bg: '#3A225D', accent: '#F0C040', short: 'KKR',  gradient: 'linear-gradient(135deg, #3A225D, #5C3D8F)' },
-  'Delhi Capitals':              { bg: '#0078BC', accent: '#EF1C25', short: 'DC',   gradient: 'linear-gradient(135deg, #0078BC, #EF1C25)' },
-  'Rajasthan Royals':            { bg: '#EA1A85', accent: '#004BA0', short: 'RR',   gradient: 'linear-gradient(135deg, #EA1A85, #C0006A)' },
-  'Punjab Kings':                { bg: '#ED1B24', accent: '#A7A9AC', short: 'PBKS', gradient: 'linear-gradient(135deg, #ED1B24, #B01218)' },
-  'Sunrisers Hyderabad':         { bg: '#F7A721', accent: '#EF1C25', short: 'SRH',  gradient: 'linear-gradient(135deg, #F7A721, #E8860A)' },
-  'Gujarat Titans':              { bg: '#1C4E9D', accent: '#00BFFF', short: 'GT',   gradient: 'linear-gradient(135deg, #1C4E9D, #0A3070)' },
-  'Lucknow Super Giants':        { bg: '#A72056', accent: '#00BFFF', short: 'LSG',  gradient: 'linear-gradient(135deg, #A72056, #7A1840)' },
-};
+interface TeamBadgeProps {
+  id: string;
+  name: string;
+  gradientStart: string;
+  gradientEnd: string;
+  captain?: string;
+  keyBowler?: string;
+  size?: 'sm' | 'md' | 'lg' | 'xl';
+  showDetails?: boolean;
+}
 
-const sizes = {
-  sm: { outer: 36, font: 10 },
-  md: { outer: 52, font: 13 },
-  lg: { outer: 72, font: 17 },
-  xl: { outer: 96, font: 22 },
-};
+const sizeMap = { sm: 40, md: 56, lg: 80, xl: 96 };
+const fontMap = { sm: 11, md: 14, lg: 18, xl: 22 };
 
-export default function TeamBadge({ team, size = 'md', animate = true }: {
-  team: string; size?: 'sm' | 'md' | 'lg' | 'xl'; animate?: boolean;
-}) {
-  const t = TEAMS[team] || { bg: '#333', accent: '#888', short: team.slice(0, 3).toUpperCase(), gradient: 'linear-gradient(135deg, #333, #555)' };
-  const s = sizes[size];
+export default function TeamBadge({ id, name, gradientStart, gradientEnd, captain, keyBowler, size = 'md', showDetails = false }: TeamBadgeProps) {
+  const px = sizeMap[size];
+  const fs = fontMap[size];
   return (
-    <motion.div
-      whileHover={animate ? { scale: 1.08 } : {}}
-      whileTap={animate ? { scale: 0.95 } : {}}
-      transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-      style={{
-        width: s.outer, height: s.outer, borderRadius: '50%',
-        background: t.gradient,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        fontSize: s.font, fontWeight: 800, color: '#fff', flexShrink: 0,
-        boxShadow: `0 0 24px ${t.bg}55, 0 0 48px ${t.bg}22`,
-        border: `2px solid ${t.accent}55`,
-        letterSpacing: '0.04em', cursor: 'default', userSelect: 'none',
-        fontFamily: 'Barlow Condensed, sans-serif',
-      }}
-    >
-      {t.short}
-    </motion.div>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, height: showDetails ? '100%' : 'auto' }}>
+      <motion.div
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+        style={{
+          width: px, height: px, borderRadius: '50%',
+          background: `linear-gradient(135deg, ${gradientStart}, ${gradientEnd})`,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: fs, fontWeight: 900, color: '#fff',
+          fontFamily: '"Barlow Condensed", sans-serif',
+          boxShadow: `0 0 24px ${gradientStart}88, 0 0 48px ${gradientStart}33`,
+          border: `2px solid ${gradientEnd}66`,
+          flexShrink: 0, userSelect: 'none', cursor: 'default',
+        }}
+      >{id}</motion.div>
+      {showDetails && (
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
+          style={{ width: '100%', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${gradientEnd}33`, borderRadius: 12, padding: '14px 16px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${gradientStart}, ${gradientEnd})` }} />
+          <div style={{ position: 'absolute', top: -20, right: -20, width: 80, height: 80, borderRadius: '50%', background: gradientStart, opacity: 0.15, filter: 'blur(20px)' }} />
+          <div style={{ fontFamily: '"Barlow Condensed", sans-serif', fontSize: 13, fontWeight: 800, color: '#fff', marginBottom: 8 }}>{name}</div>
+          {captain && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.65)', marginBottom: 4, fontFamily: 'Barlow, sans-serif' }}>⚡ {captain}</div>}
+          {keyBowler && <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', fontFamily: 'Barlow, sans-serif' }}>🎯 {keyBowler}</div>}
+        </motion.div>
+      )}
+    </div>
   );
 }

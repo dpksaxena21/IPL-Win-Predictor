@@ -1,63 +1,52 @@
 'use client';
-
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getTeams, getVenues, predictMatch, PredictResponse } from '@/lib/api';
 import ResultCard from './ResultCard';
+import TeamBadge from './TeamBadge';
 
-const inputStyle = {
-  width: '100%', padding: '11px 14px',
-  background: 'rgba(255,255,255,0.04)',
+export interface Team {
+  id: string;
+  name: string;
+  colors: string[];
+  captain: string;
+  keyBowler: string;
+}
+
+const selectStyle = {
+  width: '100%', padding: '12px 14px',
+  background: 'rgba(0,0,0,0.4)',
   border: '1px solid rgba(255,255,255,0.1)',
-  color: '#fff', fontSize: 13,
-  fontFamily: 'Barlow Condensed, sans-serif',
-  fontWeight: 500, letterSpacing: '0.05em',
+  borderRadius: 8, color: '#fff', fontSize: 14,
+  fontFamily: 'Barlow, sans-serif',
   outline: 'none', cursor: 'pointer',
   appearance: 'none' as const,
   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 10 10'%3E%3Cpath fill='%23666' d='M5 7L0 2h10z'/%3E%3C/svg%3E")`,
   backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', paddingRight: 36,
+  transition: 'border-color 0.2s',
 };
 
 const labelStyle = {
   display: 'block' as const,
-  fontFamily: 'Barlow Condensed, sans-serif',
-  fontSize: 10, fontWeight: 700,
-  color: 'rgba(255,255,255,0.35)',
-  letterSpacing: '0.15em', marginBottom: 6,
+  color: 'rgba(255,255,255,0.6)',
+  fontSize: 11, fontWeight: 600,
+  letterSpacing: '0.1em',
+  marginBottom: 6,
   textTransform: 'uppercase' as const,
+  fontFamily: 'Barlow Condensed, sans-serif',
 };
 
-type TeamInfo = { captain: string; bowler: string; color: string; accent: string; short: string };
-
-function TeamCard({ name, info }: { name: string; info: TeamInfo }) {
-  return (
-    <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ type: 'spring', stiffness: 200, damping: 20 }}
-      style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)', border: `1px solid ${info.accent}44`, borderRadius: 12, padding: '16px 14px', position: 'relative', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', top: -16, right: -16, width: 80, height: 80, borderRadius: '50%', background: info.color, opacity: 0.15, filter: 'blur(20px)' }} />
-      <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 2, background: `linear-gradient(90deg, ${info.color}, ${info.accent})` }} />
-      <div style={{ width: 48, height: 48, borderRadius: '50%', background: `linear-gradient(135deg, ${info.color}, ${info.accent}88)`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: '#fff', fontFamily: 'Barlow Condensed, sans-serif', boxShadow: `0 0 16px ${info.color}55`, border: `2px solid ${info.accent}55`, marginBottom: 8 }}>{info.short}</div>
-      <div style={{ fontFamily: 'Barlow Condensed, sans-serif', fontSize: 12, fontWeight: 800, color: '#fff', marginBottom: 6 }}>{name}</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.6)' }}>⚡ {info.captain}</span>
-        <span style={{ fontFamily: 'Barlow, sans-serif', fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>🎯 {info.bowler}</span>
-      </div>
-    </motion.div>
-  );
-}
-
-export default function PredictForm({ showTeamCards = false, teamData = {} }: {
-  showTeamCards?: boolean;
-  teamData?: Record<string, TeamInfo>;
-}) {
-  const [teams, setTeams] = useState<string[]>([]);
+export default function PredictForm({ teams }: { teams: Team[] }) {
   const [venues, setVenues] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<PredictResponse | null>(null);
   const [error, setError] = useState('');
   const [form, setForm] = useState({ team1: '', team2: '', venue: '', toss_winner: '', toss_decision: 'bat' });
 
+  const team1obj = teams.find(t => t.name === form.team1);
+  const team2obj = teams.find(t => t.name === form.team2);
+
   useEffect(() => {
-    getTeams().then(setTeams);
     getVenues().then(v => setVenues([...new Set(v)]));
   }, []);
 
@@ -79,47 +68,66 @@ export default function PredictForm({ showTeamCards = false, teamData = {} }: {
   };
 
   return (
-    <div>
-      {/* Team cards shown after selection */}
-      <AnimatePresence>
-        {showTeamCards && (form.team1 || form.team2) && (
-          <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20, overflow: 'hidden' }}>
-            {form.team1 && teamData[form.team1] && <TeamCard name={form.team1} info={teamData[form.team1]} />}
-            {form.team2 && teamData[form.team2] && <TeamCard name={form.team2} info={teamData[form.team2]} />}
-          </motion.div>
-        )}
-      </AnimatePresence>
+    <div style={{ width: '100%', maxWidth: 800, margin: '0 auto', background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '28px 28px', position: 'relative', overflow: 'hidden', boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}>
+      {/* Corner brackets */}
+      <div style={{ position: 'absolute', top: 0, left: 0, width: 32, height: 32, borderTop: '2px solid rgba(245,184,0,0.5)', borderLeft: '2px solid rgba(245,184,0,0.5)', borderRadius: '12px 0 0 0' }} />
+      <div style={{ position: 'absolute', top: 0, right: 0, width: 32, height: 32, borderTop: '2px solid rgba(245,184,0,0.5)', borderRight: '2px solid rgba(245,184,0,0.5)', borderRadius: '0 12px 0 0' }} />
+      <div style={{ position: 'absolute', bottom: 0, left: 0, width: 32, height: 32, borderBottom: '2px solid rgba(245,184,0,0.5)', borderLeft: '2px solid rgba(245,184,0,0.5)', borderRadius: '0 0 0 12px' }} />
+      <div style={{ position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderBottom: '2px solid rgba(245,184,0,0.5)', borderRight: '2px solid rgba(245,184,0,0.5)', borderRadius: '0 0 12px 0' }} />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-        <div>
-          <label style={labelStyle}>Team 1 — Batting First</label>
-          <select name="team1" value={form.team1} onChange={handleChange} style={inputStyle}>
-            <option value="">Select team</option>
-            {teams.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+      <h2 style={{ fontFamily: '"Barlow Condensed", sans-serif', fontSize: 24, fontWeight: 600, color: '#fff', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 10 }}>
+        <span style={{ display: 'inline-block', width: 6, height: 24, background: '#F5B800', borderRadius: 3 }} />
+        SELECT MATCH
+      </h2>
+
+      {/* Team selectors + cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginBottom: 20 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Home Team</label>
+            <select name="team1" value={form.team1} onChange={handleChange} style={selectStyle}>
+              <option value="">Select Team 1</option>
+              {teams.filter(t => t.name !== form.team2).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+            </select>
+          </div>
+          <AnimatePresence>
+            {team1obj && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <TeamBadge id={team1obj.id} name={team1obj.name} gradientStart={team1obj.colors[0]} gradientEnd={team1obj.colors[1]} captain={team1obj.captain} keyBowler={team1obj.keyBowler} showDetails={true} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-        <div>
-          <label style={labelStyle}>Team 2 — Chasing</label>
-          <select name="team2" value={form.team2} onChange={handleChange} style={inputStyle}>
-            <option value="">Select team</option>
-            {teams.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+          <div>
+            <label style={labelStyle}>Away Team</label>
+            <select name="team2" value={form.team2} onChange={handleChange} style={selectStyle}>
+              <option value="">Select Team 2</option>
+              {teams.filter(t => t.name !== form.team1).map(t => <option key={t.id} value={t.name}>{t.name}</option>)}
+            </select>
+          </div>
+          <AnimatePresence>
+            {team2obj && (
+              <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                <TeamBadge id={team2obj.id} name={team2obj.name} gradientStart={team2obj.colors[0]} gradientEnd={team2obj.colors[1]} captain={team2obj.captain} keyBowler={team2obj.keyBowler} showDetails={true} />
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
-      <div style={{ marginBottom: 12 }}>
+      <div style={{ marginBottom: 16 }}>
         <label style={labelStyle}>Venue</label>
-        <select name="venue" value={form.venue} onChange={handleChange} style={inputStyle}>
+        <select name="venue" value={form.venue} onChange={handleChange} style={selectStyle}>
           <option value="">Select venue</option>
           {venues.map(v => <option key={v} value={v}>{v}</option>)}
         </select>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
         <div>
           <label style={labelStyle}>Toss Winner</label>
-          <select name="toss_winner" value={form.toss_winner} onChange={handleChange} style={inputStyle}>
+          <select name="toss_winner" value={form.toss_winner} onChange={handleChange} style={selectStyle}>
             <option value="">Select</option>
             {form.team1 && <option value={form.team1}>{form.team1}</option>}
             {form.team2 && <option value={form.team2}>{form.team2}</option>}
@@ -127,9 +135,9 @@ export default function PredictForm({ showTeamCards = false, teamData = {} }: {
         </div>
         <div>
           <label style={labelStyle}>Toss Decision</label>
-          <select name="toss_decision" value={form.toss_decision} onChange={handleChange} style={inputStyle}>
+          <select name="toss_decision" value={form.toss_decision} onChange={handleChange} style={selectStyle}>
             <option value="bat">Bat First</option>
-            <option value="field">Field First</option>
+            <option value="field">Bowl First</option>
           </select>
         </div>
       </div>
@@ -137,22 +145,21 @@ export default function PredictForm({ showTeamCards = false, teamData = {} }: {
       <AnimatePresence>
         {error && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.25)', color: '#f87171', fontSize: 12, fontFamily: 'Barlow Condensed, sans-serif', letterSpacing: '0.05em', borderRadius: 6 }}>
+            style={{ marginBottom: 14, padding: '10px 14px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171', fontSize: 13, borderRadius: 8 }}>
             {error}
           </motion.div>
         )}
       </AnimatePresence>
 
-      <motion.button onClick={handleSubmit} disabled={loading}
-        whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.98 }}
-        style={{ width: '100%', padding: '14px 24px', border: 'none', cursor: loading ? 'not-allowed' : 'pointer', background: loading ? 'rgba(245,184,0,0.3)' : 'linear-gradient(90deg, #F5B800, #C49200)', color: '#060612', fontFamily: 'Barlow Condensed, sans-serif', fontSize: 16, fontWeight: 800, letterSpacing: '0.15em', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, borderRadius: 4 }}>
+      <button onClick={handleSubmit} disabled={!form.team1 || !form.team2 || loading}
+        style={{ width: '100%', padding: '16px 24px', border: 'none', borderRadius: 8, cursor: (!form.team1 || !form.team2 || loading) ? 'not-allowed' : 'pointer', background: '#F5B800', color: '#000', fontFamily: '"Barlow Condensed", sans-serif', fontSize: 20, fontWeight: 700, letterSpacing: '0.1em', boxShadow: '0 0 20px rgba(245,184,0,0.4)', opacity: (!form.team1 || !form.team2) ? 0.5 : 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, transition: 'all 0.2s' }}>
         {loading ? (
           <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: 'linear' }}
-            style={{ width: 18, height: 18, border: '2px solid #060612', borderTopColor: 'transparent', borderRadius: '50%' }} />
-        ) : '🏏 PREDICT WINNER'}
-      </motion.button>
+            style={{ width: 20, height: 20, border: '2px solid #000', borderTopColor: 'transparent', borderRadius: '50%' }} />
+        ) : <><span>🏏</span> PREDICT WINNER</>}
+      </button>
 
-      {result && <ResultCard result={result} />}
+      {result && <ResultCard result={result} team1obj={team1obj} team2obj={team2obj} />}
     </div>
   );
 }
